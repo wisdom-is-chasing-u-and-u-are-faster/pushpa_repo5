@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard - Smart Study</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="brand">
+            <span>📚</span> Smart Study Platform
+        </a>
+        <ul class="nav-links">
+            <li><a href="faculty_dashboard.html" class="active">Faculty Dashboard</a></li>
+            <li><a href="student_dashboard.html">Student View</a></li>
+            <li><a href="syllabus_management.html">Syllabus Management</a></li>
+            <li><a href="quiz_center.html">Quiz Center</a></li>
+            <li><a href="login.html" onclick="SmartStudyAPI.clearToken()">Sign Out</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div style="margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.75rem; color: var(--neutral-900);">Faculty Cohort Overview</h1>
+            <p style="color: var(--neutral-500); font-size: 0.875rem;">Real-time student velocity, risk indicators, and intervention telemetry.</p>
+        </div>
+
+        <!-- Aggregate KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Class Average Velocity</div>
+                <div class="kpi-value" id="avgVelocity" style="color: #005A9C;">--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Cohort Plan Adherence Rate</div>
+                <div class="kpi-value" id="avgAdherence" style="color: #00A99D;">--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">At-Risk Students</div>
+                <div class="kpi-value" id="atRiskCount" style="color: #EF4444;">--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Active Enrolled Learners</div>
+                <div class="kpi-value" id="totalStudents">--</div>
+            </div>
+        </div>
+
+        <!-- Student Roster Table -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.25rem; color: var(--neutral-900);">Learner Roster & Progress Analytics</h2>
+                <button class="btn btn-secondary" onclick="loadFacultyData()">↻ Refresh Roster</button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                        <th>Course</th>
+                        <th>Adherence %</th>
+                        <th>Velocity</th>
+                        <th>Status</th>
+                        <th>Intervention</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody">
+                    <tr><td colspan="7" style="text-align: center; color: var(--neutral-500);">Loading students...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        async function loadFacultyData() {
+            try {
+                // 1. Fetch Overview KPIs
+                const overview = await SmartStudyAPI.getFacultyOverview();
+                document.getElementById('avgVelocity').innerText = `${overview.class_average_velocity}x`;
+                document.getElementById('avgAdherence').innerText = `${overview.plan_adherence_rate}%`;
+                document.getElementById('atRiskCount').innerText = `${overview.at_risk_students_count}`;
+                document.getElementById('totalStudents').innerText = `${overview.total_students}`;
+
+                // 2. Fetch Student List
+                const roster = await SmartStudyAPI.getFacultyStudents();
+                const tbody = document.getElementById('studentTableBody');
+                
+                if (!roster.students || roster.students.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No students registered.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = roster.students.map(s => {
+                    const statusBadge = s.at_risk 
+                        ? '<span class="badge badge-danger">At-Risk</span>'
+                        : '<span class="badge badge-success">On Track</span>';
+                    return `
+                        <tr>
+                            <td><strong>${s.name}</strong></td>
+                            <td style="color: var(--neutral-600);">${s.email}</td>
+                            <td>${s.course}</td>
+                            <td><strong>${s.adherence_rate}%</strong></td>
+                            <td>${s.velocity_score}x</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.625rem; font-size: 0.75rem;" onclick="alert('Notification sent to ${s.name} (${s.email})')">Nudge Student</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Faculty dashboard load error:", err);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadFacultyData);
+    </script>
+</body>
+</html>

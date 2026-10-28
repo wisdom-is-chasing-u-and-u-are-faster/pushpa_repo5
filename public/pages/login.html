@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Study Management System</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #005A9C 0%, #00A99D 100%);
+        }
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-header h1 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .demo-credentials {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--neutral-50);
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            color: var(--neutral-600);
+        }
+        .demo-credentials code {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Smart Study Platform</h1>
+                <p style="color: var(--neutral-500); font-size: 0.875rem;">Adaptive Scheduling & Diagnostic Learning</p>
+            </div>
+
+            <div id="alertBox" style="display:none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem;"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Institutional Email</label>
+                    <input type="email" id="email" class="form-control" required placeholder="alex@smartstudy.edu" value="alex@smartstudy.edu">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" required placeholder="••••••••" value="password123">
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Sign In</button>
+            </form>
+
+            <div class="demo-credentials">
+                <strong>Demo Accounts:</strong><br>
+                • Student: <code>alex@smartstudy.edu</code> / <code>password123</code><br>
+                • Faculty: <code>chen@smartstudy.edu</code> / <code>password123</code>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const alertBox = document.getElementById('alertBox');
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            btn.disabled = true;
+            btn.innerText = "Signing In...";
+            alertBox.style.display = "none";
+
+            try {
+                const res = await SmartStudyAPI.login(email, password);
+                alertBox.style.display = "block";
+                alertBox.style.background = "#D1FAE5";
+                alertBox.style.color = "#065F46";
+                alertBox.innerText = `Welcome, ${res.user.name}! Redirecting...`;
+
+                setTimeout(() => {
+                    if (res.user.role === 'faculty') {
+                        window.location.href = "faculty_dashboard.html";
+                    } else {
+                        window.location.href = "student_dashboard.html";
+                    }
+                }, 800);
+            } catch (err) {
+                alertBox.style.display = "block";
+                alertBox.style.background = "#FEE2E2";
+                alertBox.style.color = "#991B1B";
+                alertBox.innerText = err.message || "Invalid credentials.";
+                btn.disabled = false;
+                btn.innerText = "Sign In";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Center - Smart Study</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .quiz-question-card {
+            background: var(--neutral-50);
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--neutral-200);
+        }
+        .option-label {
+            display: block;
+            padding: 0.625rem 1rem;
+            background: white;
+            border: 1px solid var(--neutral-200);
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            border-color: var(--primary-color);
+            background: #F0F7FF;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="brand">
+            <span>📚</span> Smart Study Platform
+        </a>
+        <ul class="nav-links">
+            <li><a href="quiz_center.html" class="active">Quiz Center</a></li>
+            <li><a href="student_dashboard.html">Student Dashboard</a></li>
+            <li><a href="syllabus_management.html">Syllabus Management</a></li>
+            <li><a href="faculty_dashboard.html">Faculty Dashboard</a></li>
+            <li><a href="login.html" onclick="SmartStudyAPI.clearToken()">Sign Out</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div style="margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.75rem; color: var(--neutral-900);">Formative Diagnostic Quiz Studio</h1>
+            <p style="color: var(--neutral-500); font-size: 0.875rem;">Generate syllabus-grounded diagnostic assessments with instant conceptual explanations.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- Quiz Generator Box -->
+            <div class="card">
+                <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--neutral-900);">Generate a Diagnostic Quiz</h2>
+                <form id="quizGenForm">
+                    <div class="form-group">
+                        <label for="courseCode">Course Selection</label>
+                        <select id="courseCode" class="form-control">
+                            <option value="CS301">CS301 - Algorithm Analysis & Design</option>
+                            <option value="BIO210">BIO210 - Cellular Biology</option>
+                            <option value="MATH105">MATH105 - Multivariable Calculus</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="topic">Target Topic</label>
+                        <input type="text" id="topic" class="form-control" required placeholder="e.g. Dynamic Programming" value="Dynamic Programming">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="count">Questions</label>
+                            <select id="count" class="form-control">
+                                <option value="2">2 Questions</option>
+                                <option value="3" selected>3 Questions</option>
+                                <option value="5">5 Questions</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="difficulty">Difficulty</label>
+                            <select id="difficulty" class="form-control">
+                                <option value="Easy">Easy</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="Hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="genQuizBtn" class="btn btn-primary" style="width: 100%;">Start Quiz</button>
+                </form>
+            </div>
+
+            <!-- Live Active Quiz Runner -->
+            <div class="card" id="activeQuizCard" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 id="activeQuizTitle" style="font-size: 1.25rem; color: var(--neutral-900);">Active Assessment</h2>
+                    <span class="badge badge-warning" id="activeQuizDifficulty">Medium</span>
+                </div>
+                
+                <form id="activeQuizForm">
+                    <div id="questionsContainer"></div>
+                    <button type="submit" id="submitAnswersBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit for Instant Diagnostic Feedback</button>
+                </form>
+
+                <div id="quizResultBox" style="display: none; margin-top: 1.5rem; padding: 1.25rem; border-radius: 8px;"></div>
+            </div>
+        </div>
+
+        <!-- Past History Table -->
+        <div class="card">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--neutral-900);">Quiz History & Diagnostic Records</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Course</th>
+                        <th>Topic</th>
+                        <th>Diagnostic Score</th>
+                        <th>Questions</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="quizHistoryBody">
+                    <tr><td colspan="6" style="text-align: center; color: var(--neutral-500);">Loading history...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let currentQuiz = null;
+
+        async function loadHistory() {
+            try {
+                const res = await SmartStudyAPI.getQuizHistory();
+                const tbody = document.getElementById('quizHistoryBody');
+                if (!res.quizzes || res.quizzes.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No completed quizzes yet.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = res.quizzes.map(q => {
+                    const badge = q.score_percent >= 80 ? 'badge-success' : 'badge-warning';
+                    return `
+                        <tr>
+                            <td style="color: var(--neutral-500);">${q.date}</td>
+                            <td><strong>${q.course_code}</strong></td>
+                            <td>${q.topic}</td>
+                            <td><strong style="color: #005A9C;">${q.score_percent}%</strong></td>
+                            <td>${q.total_questions} Questions</td>
+                            <td><span class="badge ${badge}">Evaluated</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Failed to load quiz history:", err);
+            }
+        }
+
+        document.getElementById('quizGenForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('genQuizBtn');
+            const code = document.getElementById('courseCode').value;
+            const topic = document.getElementById('topic').value.trim();
+            const count = parseInt(document.getElementById('count').value);
+            const difficulty = document.getElementById('difficulty').value;
+
+            btn.disabled = true;
+            btn.innerText = "Synthesizing Questions...";
+
+            try {
+                const quiz = await SmartStudyAPI.generateQuiz(code, topic, count, difficulty);
+                currentQuiz = quiz;
+
+                document.getElementById('activeQuizCard').style.display = "block";
+                document.getElementById('activeQuizTitle').innerText = `${quiz.course_code}: ${quiz.topic}`;
+                document.getElementById('activeQuizDifficulty').innerText = difficulty;
+                document.getElementById('quizResultBox').style.display = "none";
+                document.getElementById('submitAnswersBtn').disabled = false;
+                document.getElementById('submitAnswersBtn').style.display = "block";
+
+                const container = document.getElementById('questionsContainer');
+                container.innerHTML = quiz.questions.map((q, idx) => `
+                    <div class="quiz-question-card">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Q${idx + 1}: ${q.question}</div>
+                        ${q.options.map(opt => `
+                            <label class="option-label">
+                                <input type="radio" name="ans_${q.id}" value="${opt.charAt(0)}" required>
+                                ${opt}
+                            </label>
+                        `).join('')}
+                    </div>
+                `).join('');
+
+                btn.disabled = false;
+                btn.innerText = "Start Quiz";
+            } catch (err) {
+                alert("Failed to generate quiz: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "Start Quiz";
+            }
+        });
+
+        document.getElementById('activeQuizForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentQuiz) return;
+
+            const submitBtn = document.getElementById('submitAnswersBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Grading & Synthesizing Explanations...";
+
+            const answers = currentQuiz.questions.map(q => {
+                const selected = document.querySelector(`input[name="ans_${q.id}"]:checked`);
+                return {
+                    question_id: q.id,
+                    selected_option: selected ? selected.value : ""
+                };
+            });
+
+            try {
+                const result = await SmartStudyAPI.submitQuiz(currentQuiz.quiz_id, answers);
+                const resBox = document.getElementById('quizResultBox');
+                resBox.style.display = "block";
+                resBox.style.background = result.score_percent >= 70 ? "#ECFDF5" : "#FEF3C7";
+                resBox.style.border = `1px solid ${result.score_percent >= 70 ? '#10B981' : '#F59E0B'}`;
+
+                resBox.innerHTML = `
+                    <h3 style="font-size: 1.125rem; color: var(--neutral-900); margin-bottom: 0.5rem;">Score: ${result.score_percent}% (${result.correct_count}/${result.total_questions} Correct)</h3>
+                    <p style="margin-bottom: 1rem; color: var(--neutral-700);">${result.diagnostic_feedback}</p>
+                    <div style="border-top: 1px solid var(--neutral-200); padding-top: 0.75rem;">
+                        <strong>Diagnostic Explanations:</strong>
+                        ${result.breakdown.map((b, i) => `
+                            <div style="font-size: 0.8125rem; margin-top: 0.5rem; color: ${b.correct ? '#065F46' : '#991B1B'};">
+                                • Question ${i+1} (${b.correct ? '✓ Correct' : '✗ Incorrect'}): ${b.explanation}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                submitBtn.style.display = "none";
+                loadHistory();
+            } catch (err) {
+                alert("Failed to submit quiz: " + err.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit for Instant Diagnostic Feedback";
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>

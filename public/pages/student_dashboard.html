@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Smart Study</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="brand">
+            <span>📚</span> Smart Study Platform
+        </a>
+        <ul class="nav-links">
+            <li><a href="student_dashboard.html" class="active">Student Dashboard</a></li>
+            <li><a href="syllabus_management.html">Syllabus Management</a></li>
+            <li><a href="quiz_center.html">Quiz Center</a></li>
+            <li><a href="faculty_dashboard.html">Faculty View</a></li>
+            <li><a href="login.html" onclick="SmartStudyAPI.clearToken()">Sign Out</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+                <h1 id="welcomeUser" style="font-size: 1.75rem; color: var(--neutral-900);">Welcome Back, Alex</h1>
+                <p id="scheduleDate" style="color: var(--neutral-500); font-size: 0.875rem;">Today's Adaptive Plan: Tuesday, July 23</p>
+            </div>
+            <div>
+                <a href="quiz_center.html" class="btn btn-primary">+ Generate Quiz</a>
+                <a href="syllabus_management.html" class="btn btn-secondary" style="margin-left: 0.5rem;">Upload Syllabus</a>
+            </div>
+        </div>
+
+        <!-- KPI Metrics -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Weekly Completed Hours</div>
+                <div class="kpi-value" id="kpiHours">16.5 / 20 hrs</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Plan Adherence Rate</div>
+                <div class="kpi-value" id="kpiAdherence" style="color: #005A9C;">82.5%</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Cognitive Velocity Index</div>
+                <div class="kpi-value" id="kpiVelocity" style="color: #00A99D;">1.15x</div>
+            </div>
+        </div>
+
+        <!-- Adaptive Schedule Blocks -->
+        <div class="card">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--neutral-900);">Today's Adaptive Study Blocks</h2>
+            <div id="blocksContainer">
+                <p style="color: var(--neutral-500);">Loading study blocks...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        async function loadDashboard() {
+            try {
+                const user = SmartStudyAPI.getCurrentUser();
+                if (user && user.name) {
+                    document.getElementById('welcomeUser').innerText = `Welcome Back, ${user.name}`;
+                }
+
+                // 1. Fetch Progress Metrics
+                const progress = await SmartStudyAPI.getStudentProgress();
+                document.getElementById('kpiHours').innerText = `${progress.hours_completed} / ${progress.weekly_hours_target} hrs`;
+                document.getElementById('kpiAdherence').innerText = `${progress.adherence_rate}%`;
+                document.getElementById('kpiVelocity').innerText = `${progress.velocity_score}x`;
+
+                // 2. Fetch Schedule Blocks
+                const schedule = await SmartStudyAPI.getStudentSchedule();
+                document.getElementById('scheduleDate').innerText = `Today's Adaptive Plan: ${schedule.date}`;
+                
+                const container = document.getElementById('blocksContainer');
+                if (!schedule.blocks || schedule.blocks.length === 0) {
+                    container.innerHTML = "<p>No study blocks scheduled for today.</p>";
+                    return;
+                }
+
+                container.innerHTML = schedule.blocks.map(b => {
+                    const isDone = b.status === 'Completed';
+                    const loadClass = b.cognitive_load === 'High' ? 'badge-danger' : (b.cognitive_load === 'Medium' ? 'badge-warning' : 'badge-success');
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--neutral-200); ${isDone ? 'opacity: 0.7; background: #F9FAFB;' : ''}">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <input type="checkbox" style="width: 20px; height: 20px; cursor: pointer;" ${isDone ? 'checked' : ''} onchange="toggleBlock('${b.id}', this.checked)">
+                                <div>
+                                    <div style="font-weight: 600; color: var(--neutral-900); ${isDone ? 'text-decoration: line-through;' : ''}">${b.course_code}: ${b.topic}</div>
+                                    <div style="font-size: 0.8125rem; color: var(--neutral-500);">${b.time_range} • ${b.duration_minutes} minutes</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="badge ${loadClass}">${b.cognitive_load} Load</span>
+                                <span class="badge ${isDone ? 'badge-success' : 'badge-warning'}">${b.status}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Dashboard error:", err);
+            }
+        }
+
+        async function toggleBlock(blockId, completed) {
+            try {
+                const res = await SmartStudyAPI.toggleStudyBlock(blockId, completed);
+                document.getElementById('kpiAdherence').innerText = `${res.adherence_rate}%`;
+                loadDashboard();
+            } catch (err) {
+                alert("Failed to update study block: " + err.message);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>

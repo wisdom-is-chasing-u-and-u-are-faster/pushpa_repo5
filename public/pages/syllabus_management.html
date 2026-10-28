@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllabus Management - Smart Study</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="brand">
+            <span>📚</span> Smart Study Platform
+        </a>
+        <ul class="nav-links">
+            <li><a href="syllabus_management.html" class="active">Syllabus Management</a></li>
+            <li><a href="student_dashboard.html">Student Dashboard</a></li>
+            <li><a href="quiz_center.html">Quiz Center</a></li>
+            <li><a href="faculty_dashboard.html">Faculty Dashboard</a></li>
+            <li><a href="login.html" onclick="SmartStudyAPI.clearToken()">Sign Out</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div style="margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.75rem; color: var(--neutral-900);">Syllabus Ingestion & Taxonomy Studio</h1>
+            <p style="color: var(--neutral-500); font-size: 0.875rem;">Deconstruct course syllabi into structured learning taxonomies with PII masking.</p>
+        </div>
+
+        <div id="uploadFeedback" style="display:none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1.5rem;"></div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+            <!-- Upload Form -->
+            <div class="card">
+                <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--neutral-900);">Upload a New Syllabus</h2>
+                <form id="syllabusForm">
+                    <div class="form-group">
+                        <label for="courseCode">Course Code</label>
+                        <input type="text" id="courseCode" class="form-control" required placeholder="e.g. CS450" value="CS450">
+                    </div>
+                    <div class="form-group">
+                        <label for="courseTitle">Course Title</label>
+                        <input type="text" id="courseTitle" class="form-control" required placeholder="e.g. Distributed Cloud Systems" value="Distributed Cloud Systems">
+                    </div>
+                    <div class="form-group">
+                        <label for="term">Academic Term</label>
+                        <input type="text" id="term" class="form-control" required placeholder="e.g. Fall 2026" value="Fall 2026">
+                    </div>
+                    <div class="form-group">
+                        <label for="syllabusText">Syllabus Topics / Text Outline</label>
+                        <textarea id="syllabusText" class="form-control" rows="5" required placeholder="Paste syllabus topics, weekly breakdown, or learning modules...">- Week 1: Consensus Protocols & Raft Architecture&#10;- Week 2: CAP Theorem and Eventual Consistency Models&#10;- Week 3: Distributed Transactions & Two-Phase Commit</textarea>
+                    </div>
+                    <button type="submit" id="uploadBtn" class="btn btn-primary" style="width: 100%;">Upload and Process</button>
+                </form>
+            </div>
+
+            <!-- Processed Syllabi List -->
+            <div class="card">
+                <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--neutral-900);">Processed Syllabi Library</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Title</th>
+                            <th>Term</th>
+                            <th>Topics</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="syllabiTableBody">
+                        <tr><td colspan="5" style="text-align:center; color: var(--neutral-500);">Loading syllabi...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        async function loadSyllabi() {
+            try {
+                const res = await SmartStudyAPI.getSyllabi();
+                const tbody = document.getElementById('syllabiTableBody');
+
+                if (!res.syllabi || res.syllabi.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No syllabi ingested yet.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = res.syllabi.map(s => `
+                    <tr>
+                        <td><strong>${s.course_code}</strong></td>
+                        <td>${s.course_title}</td>
+                        <td style="color: var(--neutral-600);">${s.term}</td>
+                        <td><span class="badge badge-warning">${s.topics_count} Modules</span></td>
+                        <td><span class="badge badge-success">${s.status}</span></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Failed to load syllabi:", err);
+            }
+        }
+
+        document.getElementById('syllabusForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('uploadBtn');
+            const feedback = document.getElementById('uploadFeedback');
+
+            const code = document.getElementById('courseCode').value.trim();
+            const title = document.getElementById('courseTitle').value.trim();
+            const term = document.getElementById('term').value.trim();
+            const text = document.getElementById('syllabusText').value.trim();
+
+            btn.disabled = true;
+            btn.innerText = "Parsing & Processing...";
+            feedback.style.display = "none";
+
+            try {
+                const res = await SmartStudyAPI.uploadSyllabus(code, title, term, text);
+                feedback.style.display = "block";
+                feedback.style.background = "#D1FAE5";
+                feedback.style.color = "#065F46";
+                feedback.innerHTML = `<strong>Success!</strong> Ingested <strong>${res.course_code}</strong> with ${res.extracted_topics.length} extracted modules.`;
+                
+                btn.disabled = false;
+                btn.innerText = "Upload and Process";
+                document.getElementById('courseCode').value = '';
+                document.getElementById('courseTitle').value = '';
+                document.getElementById('syllabusText').value = '';
+                loadSyllabi();
+            } catch (err) {
+                feedback.style.display = "block";
+                feedback.style.background = "#FEE2E2";
+                feedback.style.color = "#991B1B";
+                feedback.innerText = "Upload failed: " + err.message;
+                btn.disabled = false;
+                btn.innerText = "Upload and Process";
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', loadSyllabi);
+    </script>
+</body>
+</html>

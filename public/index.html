@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Management System - Core Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #005A9C 0%, #00A99D 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 2.5rem;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .hero p {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+        .feature-card {
+            background: white;
+            border: 1px solid var(--neutral-200);
+            border-radius: 10px;
+            padding: 1.75rem;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .feature-icon {
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+        }
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .feature-desc {
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="brand">
+            <span>📚</span> Smart Study Platform
+        </a>
+        <ul class="nav-links">
+            <li><a href="pages/login.html">Sign In</a></li>
+            <li><a href="pages/student_dashboard.html">Student Dashboard</a></li>
+            <li><a href="pages/syllabus_management.html">Syllabus Studio</a></li>
+            <li><a href="pages/quiz_center.html">Quiz Center</a></li>
+            <li><a href="pages/faculty_dashboard.html">Faculty Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Smart Study Management System</h1>
+            <p>Automate syllabus deconstruction, adaptive study scheduling, and diagnostic assessment synthesis with enterprise Zero Data Retention guarantees.</p>
+            <div>
+                <a href="pages/login.html" class="btn" style="background: white; color: var(--primary-color); font-weight: 700; padding: 0.75rem 1.5rem; margin-right: 0.75rem;">Launch Workspace</a>
+                <a href="pages/student_dashboard.html" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.75rem 1.5rem;">Explore Live Demo</a>
+            </div>
+        </div>
+
+        <h2 style="font-size: 1.5rem; margin-bottom: 1.25rem; color: var(--neutral-900);">Platform Modules & Views</h2>
+
+        <div class="feature-grid">
+            <a href="pages/student_dashboard.html" class="feature-card">
+                <div>
+                    <div class="feature-icon">📅</div>
+                    <div class="feature-title">Student Dashboard</div>
+                    <div class="feature-desc">Interactive daily study schedule, cognitive workload balancing, and adherence rate tracking.</div>
+                </div>
+                <span class="btn btn-primary" style="text-align: center;">Open Dashboard →</span>
+            </a>
+
+            <a href="pages/faculty_dashboard.html" class="feature-card">
+                <div>
+                    <div class="feature-icon">👨‍🏫</div>
+                    <div class="feature-title">Faculty Dashboard</div>
+                    <div class="feature-desc">Real-time cohort velocity analytics, at-risk student indicators, and academic intervention triggers.</div>
+                </div>
+                <span class="btn btn-primary" style="text-align: center;">Open Faculty View →</span>
+            </a>
+
+            <a href="pages/syllabus_management.html" class="feature-card">
+                <div>
+                    <div class="feature-icon">📑</div>
+                    <div class="feature-title">Syllabus Ingestion</div>
+                    <div class="feature-desc">Deconstruct course syllabi into structured learning taxonomies with PII masking and OCR support.</div>
+                </div>
+                <span class="btn btn-primary" style="text-align: center;">Manage Syllabi →</span>
+            </a>
+
+            <a href="pages/quiz_center.html" class="feature-card">
+                <div>
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">Diagnostic Quiz Center</div>
+                    <div class="feature-desc">Generate syllabus-grounded formative diagnostic assessments with instant conceptual explanations.</div>
+                </div>
+                <span class="btn btn-primary" style="text-align: center;">Start Quiz →</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+</body>
+</html>
